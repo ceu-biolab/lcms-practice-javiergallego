@@ -6,20 +6,20 @@ public class Lipid {
     private final int compoundId;
     private final String name;
     private final String formula;
-    private final String lipidType; // !! OPTIONAL TODO -> TRANSFORM INTO AN ENUMERATION
+    private final LipidType lipidType;
     private final int carbonCount;
     private final int doubleBondsCount;
 
 
     /**
-     * @param compoundId
-     * @param name
-     * @param formula
-     * @param lipidType
-     * @param carbonCount
-     * @param doubleBondCount
+     * @param compoundId compoundId
+     * @param name name
+     * @param formula formula
+     * @param lipidType lipidType
+     * @param carbonCount carbonCount
+     * @param doubleBondCount doubleBondCount
      */
-    public Lipid(int compoundId, String name, String formula, String lipidType, int carbonCount, int doubleBondCount) {
+    public Lipid(int compoundId, String name, String formula, LipidType lipidType, int carbonCount, int doubleBondCount) {
         this.compoundId = compoundId;
         this.name = name;
         this.formula = formula;
@@ -40,7 +40,7 @@ public class Lipid {
         return formula;
     }
 
-    public String getLipidType() {
+    public LipidType getLipidType() {
         return this.lipidType;
     }
 
@@ -75,4 +75,19 @@ public class Lipid {
                 ", doubleBondCount=" + doubleBondsCount +
                 '}';
     }
+
+    // Function to determine type order (PG < PE < PI < PA < PS < PC)
+    /*public int getTypeOrder(LipidType type) {
+        switch (type) {
+            case PG: return 1;
+            case PE: return 2;
+            case PI: return 3;
+            case PA: return 4;
+            case PS: return 5;
+            case PC: return 6;
+            case TG: return 7;
+            case FA: return 8;
+            default: return 9;
+        }
+    }*/
 }

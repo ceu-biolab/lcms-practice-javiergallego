@@ -1,64 +1,73 @@
 package adduct;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class Adduct {
 
     /**
      * Calculate the mass to search depending on the adduct hypothesis
      *
-     * @param mz mz
-     * @param adduct adduct name ([M+H]+, [2M+H]+, [M+2H]2+, etc..)
-     *
+     * @param observedMZ mz
+     * @param adductName adduct name ([M+H]+, [2M+H]+, [M+2H]2+, etc..)
      * @return the monoisotopic mass of the experimental mass mz with the adduct @param adduct
      */
-    public static Double getMonoisotopicMassFromMZ(Double mz, String adduct) {
-        Double massToSearch;
-        // !! TODO METHOD
-        // !! TODO Create the necessary regex to obtain the multimer (number before the M) and the charge (number before the + or - (if no number, the charge is 1).
+    // !! TODO Create the necessary regex to obtain the multimer (number before the M) and the charge (number before the + or - (if no number, the charge is 1).
+    public static Double getMonoisotopicMassFromMZ(Double observedMZ, String adductName) {
+        Double adductMass = null;
 
-        /*
-        if Adduct is single charge the formula is M = m/z +- adductMass. Charge is 1 so it does not affect
+        if (AdductList.MAPMZPOSITIVEADDUCTS.containsKey(adductName)) {
+            adductMass = AdductList.MAPMZPOSITIVEADDUCTS.get(adductName);
+        } else if (AdductList.MAPMZNEGATIVEADDUCTS.containsKey(adductName)) {
+            adductMass = AdductList.MAPMZNEGATIVEADDUCTS.get(adductName);
+        }
 
-        if Adduct is double or triple charged the formula is M = ( mz +- adductMass ) * charge
+        int multimer = 1;
+        if (adductName.startsWith("[2M")) {
+            multimer = 2;
+        }
 
-        if adduct is a dimer or multimer the formula is M =  (mz +- adductMass) / numberOfMultimer
-
-        return monoisotopicMass;
-
-         */
-        return null;
+        int charge = 1;
+        if (adductName.endsWith("2+") || adductName.endsWith("2-")) {
+            charge = 2;
+        }
+        return ((observedMZ * charge) + adductMass) / multimer;
     }
 
-    /**
-     * Calculate the mz of a monoisotopic mass with the corresponding adduct
-     *
-     * @param monoisotopicMass
-     * @param adduct adduct name ([M+H]+, [2M+H]+, [M+2H]2+, etc..)
-     *
-     * @return
-     */
-    public static Double getMZFromMonoisotopicMass(Double monoisotopicMass, String adduct) {
-        Double massToSearch;
-        // !! TODO METHOD
-        // !! TODO Create the necessary regex to obtain the multimer (number before the M) and the charge (number before the + or - (if no number, the charge is 1).
 
-        /*
-        if Adduct is single charge the formula is m/z = M +- adductMass. Charge is 1 so it does not affect
+    // !! TODO Create the necessary regex to obtain the multimer (number before the M) and the charge (number before the + or - (if no number, the charge is 1).
+    public static Double getMzFromMonoisotopicMass(Double monoisotopicMass, String adductName) {
+        if (monoisotopicMass == null || adductName == null) {
+            return null;
+        }
 
-        if Adduct is double or triple charged the formula is mz = M/charge +- adductMass
+        Double adductMass = AdductList.MAPMZPOSITIVEADDUCTS.get(adductName);
 
-        if adduct is a dimer or multimer the formula is mz = M * numberOfMultimer +- adductMass
+        if (adductMass == null) {
+            adductMass = AdductList.MAPMZNEGATIVEADDUCTS.get(adductName);
+        }
+        if (adductMass == null) {
+            return null;
+        }
 
-        return monoisotopicMass;
+        int multimer = 1;
+        if (adductName.startsWith("[2M")) {
+            multimer = 2;
+        }
 
-         */
-        return null;
+        int charge = 1;
+        if (adductName.endsWith("2+") || adductName.endsWith("2-")) {
+            charge = 2;
+        }
+
+        return ((monoisotopicMass * multimer) - adductMass) / charge;
     }
 
     /**
      * Returns the ppm difference between measured mass and theoretical mass
      *
-     * @param experimentalMass    Mass measured by MS
-     * @param theoreticalMass Theoretical mass of the compound
+     * @param experimentalMass Mass measured by MS
+     * @param theoreticalMass  Theoretical mass of the compound
      */
     public static int calculatePPMIncrement(Double experimentalMass, Double theoreticalMass) {
         int ppmIncrement;
@@ -70,17 +79,26 @@ public class Adduct {
     /**
      * Returns the ppm difference between measured mass and theoretical mass
      *
-     * @param measuredMass    Mass measured by MS
-     * @param ppm ppm of tolerance
+     * @param experimentalMass Mass measured by MS
+     * @param ppm              ppm of tolerance
      */
     public static double calculateDeltaPPM(Double experimentalMass, int ppm) {
         double deltaPPM;
-        deltaPPM =  Math.round(Math.abs((experimentalMass * ppm) / 1000000));
+        deltaPPM = Math.round(Math.abs((experimentalMass * ppm) / 1000000));
         return deltaPPM;
-
     }
+    /*
+    int multimer = 1;
+        Matcher multimerMatcher = Pattern.compile("\\[(\\d*)M").matcher(adductName);
+        if (multimerMatcher.find() && !multimerMatcher.group(1).isEmpty()) {
+            multimer = Integer.parseInt(multimerMatcher.group(1));
+        }
 
-
-
-
+        int charge = 1;
+        Matcher chargeMatcher = Pattern.compile("([+-])?(\\d*)([+-])\\]").matcher(adductName);
+        if (chargeMatcher.find()) {
+            String chargeStr = chargeMatcher.group(2);
+            charge = chargeStr.isEmpty() ? 1 : Integer.parseInt(chargeStr);
+        }
+     */
 }
