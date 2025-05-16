@@ -1,27 +1,89 @@
-
 package lipid;
 
 unit LipidScoreUnit;
-
-// TODO Include here rules and queries to fulfill the practice requirements
-
-
 // This is one example of rules that only prints the factorial combination of all pairs eliminating the A-A combination.
 // !! TODO This rule does not include the lipid type, you shall add it.
 // !! TODO Rule that states that the same lipid type with the same number of double bonds and a higher number of carbons should have a higher RT
 // !! TODO
-rule "Score 1 for lipid pair with increasing RT and carbon count"
-when
-    $a1 : /annotations [$rt1 : rtMin, $carbonCount1 : lipid.getCarbonCount(), $doubleBondCount : lipid.getDoubleBondsCount()]
-    $a2 : /annotations [this!= $a1, lipid.getDoubleBondsCount() == $doubleBondCount,
-    rtMin > $rt1, lipid.getCarbonCount() > $carbonCount1]
-then
-    // in this case, the only change is the addition of the score, but the fact does not change so we do not break the principle of refractoriness
-    $a1.addScore(1);
-    $a2.addScore(1);
-    // !! TODO ONLY FOR DEBUGGING
-    System.out.println("Scored 1 for annotations: " + $a1 + " and " + $a2);
+rule "Score +1 for lipid pair with increasing RT and carbon count"
+    when
+        $a1 : /annotations[$rt1 : rtMin, $type1 : lipid.getLipidType(), $carbon1 : lipid.getCarbonCount(), $db1 : lipid.getDoubleBondsCount()]
+        $a2 : /annotations[this != $a1, lipid.getLipidType() == $type1, lipid.getDoubleBondsCount() == $db1, rtMin > $rt1, lipid.getCarbonCount() > $carbon1]
+    then
+        // In this case, the only change is the addition of the score, but the fact does not change so we do not break the principle of refractoriness
+        $a1.addScore(1);
+        $a2.addScore(1);
+        // !! TODO ONLY FOR DEBUGGING
+        System.out.println("Scored +1 for annotations: " + $a1 + " and " + $a2);
 end
 
-
 // !! TODO NEXT RULE: Negative evidence. If the RT follows the opposite order than the previous one, then the addScore should be -1.
+rule "Score -1 for lipid pair with decreasing RT and carbon count"
+    when
+        $a1 : /annotations[$rt1 : rtMin, $type1 : lipid.getLipidType(), $carbon1 : lipid.getCarbonCount(), $db1 : lipid.getDoubleBondsCount()]
+        $a2 : /annotations[this != $a1, lipid.getLipidType() == $type1, lipid.getDoubleBondsCount() == $db1, rtMin < $rt1, lipid.getCarbonCount() > $carbon1]
+    then
+        // In this case, the only change is the addition of the score, but the fact does not change so we do not break the principle of refractoriness
+        $a1.addScore(-1);
+        $a2.addScore(-1);
+        // !! TODO ONLY FOR DEBUGGING
+        System.out.println("Scored -1 for annotations: " + $a1 + " and " + $a2);
+end
+
+// Rule to score +1 when RT decreases with more double bonds (same type, same carbons)
+rule "Score +1 for RT decrease with more double bonds"
+    when
+        $a1 : /annotations[$rt1 : rtMin, $type1 : lipid.getLipidType(), $carbon1 : lipid.getCarbonCount(), $db1 : lipid.getDoubleBondsCount()]
+        $a2 : /annotations[this != $a1, lipid.getLipidType() == $type1, lipid.getCarbonCount() == $carbon1, lipid.getDoubleBondsCount() > $db1, rtMin < $rt1]
+    then
+        $a1.addScore(1);
+        $a2.addScore(1);
+        System.out.println("Scored +1 for annotations: " + $a1 + " and " + $a2 + " based on double bonds");
+end
+
+// Rule to score -1 when RT increases with more double bonds (same type, same carbons)
+rule "Score -1 for RT increase with more double bonds"
+    when
+        $a1 : /annotations[$rt1 : rtMin, $type1 : lipid.getLipidType(), $carbon1 : lipid.getCarbonCount(), $db1 : lipid.getDoubleBondsCount()]
+        $a2 : /annotations[this != $a1, lipid.getLipidType() == $type1, lipid.getCarbonCount() == $carbon1, lipid.getDoubleBondsCount() > $db1, rtMin > $rt1]
+    then
+        $a1.addScore(-1);
+        $a2.addScore(-1);
+        System.out.println("Scored -1 for annotations: " + $a1 + " and " + $a2 + " based on double bonds");
+end
+
+// Rule to score +1 when RT increases with lipid type order (PG < PE < PI < PA < PS < PC)
+rule "Score +1 for RT increase with lipid type order"
+    when
+        $a1 : /annotations[$rt1 : rtMin, $type1 : lipid.getLipidType(), $carbon1 : lipid.getCarbonCount(), $db1 : lipid.getDoubleBondsCount()]
+        $a2 : /annotations[this != $a1, lipid.getCarbonCount() == $carbon1, lipid.getDoubleBondsCount() == $db1, $type2 : lipid.getLipidType()]
+        eval(getTypeOrder($type1) < getTypeOrder($type2) && $a2.rtMin > $rt1)
+    then
+        $a1.addScore(1);
+        $a2.addScore(1);
+        System.out.println("Scored +1 for annotations: " + $a1 + " and " + $a2 + " based on lipid type order");
+end
+
+// Rule to score -1 when RT decreases with lipid type order (PG < PE < PI < PA < PS < PC)
+rule "Score -1 for RT decrease with lipid type order"
+    when
+        $a1 : /annotations[$rt1 : rtMin, $type1 : lipid.getLipidType(), $carbon1 : lipid.getCarbonCount(), $db1 : lipid.getDoubleBondsCount()]
+        $a2 : /annotations[this != $a1, lipid.getCarbonCount() == $carbon1, lipid.getDoubleBondsCount() == $db1, $type2 : lipid.getLipidType()]
+        eval(getTypeOrder($type1) < getTypeOrder($type2) && $a2.rtMin < $rt1)
+    then
+        $a1.addScore(-1);
+        $a2.addScore(-1);
+        System.out.println("Scored -1 for annotations: " + $a1 + " and " + $a2 + " based on lipid type order");
+end
+
+// Function to determine type order (PG < PE < PI < PA < PS < PC)
+function int getTypeOrder(LipidType type) {
+    switch (type) {
+        case PG: return 1;
+        case PE: return 2;
+        case PI: return 3;
+        case PA: return 4;
+        case PS: return 5;
+        default : return 6;
+    }
+}
